@@ -1,6 +1,7 @@
 package container
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/zegl/kube-score/config"
@@ -53,8 +54,10 @@ func containerResources(requireCPULimit bool, requireMemoryLimit bool) func(core
 			score.AddComment("", "No containers defined", "")
 		} else if hasMissingLimit {
 			score.Grade = scorecard.GradeCritical
+			score.MillenialComment = fmt.Sprintf("Container resource limits are missing")
 		} else if hasMissingRequest {
 			score.Grade = scorecard.GradeWarning
+			score.MillenialComment =  fmt.Sprintf("Container resource requests are missing")
 		} else {
 			score.Grade = scorecard.GradeAllOK
 		}

@@ -103,7 +103,7 @@ func scoreFiles() error {
 		return fmt.Errorf("Error: --threshold-ok and --threshold-warning must be set to a value between 1 and 10 inclusive.")
 	}
 
-	if *outputFormat != "human" && *outputFormat != "ci" && *outputFormat != "json" {
+	if *outputFormat != "human" && *outputFormat != "ci" && *outputFormat != "json" && *outputFormat != "millenial" {
 		fs.Usage()
 		return fmt.Errorf("Error: --output-format must be set to: 'human', 'json' or 'ci'")
 	}
@@ -175,6 +175,8 @@ Use "-" as filename to read from STDIN.`)
 		r = w
 	} else if *outputFormat == "human" {
 		r = outputHuman(scoreCard, *okThreshold, *warningThreshold)
+	} else if *outputFormat == "millenial" {
+		r = outputMillenial(scoreCard, *okThreshold, *warningThreshold)
 	} else {
 		r = outputCi(scoreCard, *okThreshold, *warningThreshold)
 	}

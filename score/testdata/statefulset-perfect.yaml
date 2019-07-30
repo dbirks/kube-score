@@ -1,0 +1,74 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: perfect-statefulset
+spec:
+  podSelector:
+    matchLabels:
+      app: perfect-statefulset
+  egress:
+    - ports:
+        - port: 53
+          protocol: TCP
+        - port: 53
+          protocol: UDP
+      to:
+        - namespaceSelector:
+            matchLabels:
+              service: kube-system
+  policyTypes:
+    - Ingress
+    - Egress
+---
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  name: perfect-statefulset
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: perfect-statefulset
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: perfect-statefulset-test-1
+spec:
+  template:
+    metadata:
+      labels:
+        app: perfect-statefulset
+    spec:
+      replicas: 3
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - topologyKey: "kubernetes.io/hostname"
+              labelSelector:
+                matchLabels:
+                  app: perfect-statefulset
+      containers:
+      - name: foobar
+        image: foo:bar
+        imagePullPolicy: Always
+        resources:
+          limits:
+            memory: "200m"
+            cpu: 3
+          requests:
+            memory: "200m"
+            cpu: 3
+        securityContext:
+          privileged: False
+          runAsUser: 30000
+          runAsGroup: 30000
+          readOnlyRootFilesystem: True
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+        livenessProbe:
+          httpGet:
+            path: /live
+            port: 8080

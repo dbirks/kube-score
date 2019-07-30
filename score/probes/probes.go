@@ -1,11 +1,12 @@
 package probes
 
 import (
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	ks "github.com/zegl/kube-score/domain"
 	"github.com/zegl/kube-score/score/checks"
 	"github.com/zegl/kube-score/scorecard"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func Register(allChecks *checks.Checks, services ks.Services) {
@@ -94,17 +95,21 @@ func containerProbes(allServices []corev1.Service) func(corev1.PodTemplateSpec, 
 			} else {
 				score.Grade = scorecard.GradeAlmostOK
 				score.AddComment("", "Pod has the same readiness and liveness probe", "It's recommended to have different probes for the two different purposes.")
+				score.MillenialComment = "The container is using the same readiness and liveness probes"
 			}
 		} else if !hasReadinessProbe && !hasLivenessProbe {
 			score.Grade = scorecard.GradeCritical
 			score.AddComment("", "Container is missing a readinessProbe", "Without a readinessProbe Services will start sending traffic to this pod before it's ready")
 			score.AddComment("", "Container is missing a livenessProbe", "Without a livenessProbe kubelet can not restart the Pod if it has crashed")
+			score.MillenialComment = "No container probes where found"
 		} else if isTargetedByService && !hasReadinessProbe {
 			score.Grade = scorecard.GradeCritical
 			score.AddComment("", "Container is missing a readinessProbe", "Without a readinessProbe Services will start sending traffic to this pod before it's ready")
+			score.MillenialComment = "No container readinessProbe was found"
 		} else if !hasLivenessProbe {
 			score.Grade = scorecard.GradeWarning
 			score.AddComment("", "Pod is missing a livenessProbe", "Without a livenessProbe kubelet can not restart the Pod if it has crashed")
+			score.MillenialComment = "No container livenessProbe was found"
 		}
 
 		return score

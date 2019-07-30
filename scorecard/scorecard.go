@@ -1,6 +1,7 @@
 package scorecard
 
 import (
+	"github.com/fatih/color"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"strings"
 
@@ -38,10 +39,8 @@ func (s Scorecard) NewObject(typeMeta metav1.TypeMeta, objectMeta metav1.ObjectM
 
 func (s Scorecard) AnyBelowOrEqualToGrade(threshold Grade) bool {
 	for _, o := range s {
-		for _, s := range o.Checks {
-			if s.Grade <= threshold {
-				return true
-			}
+		if o.AnyBelowOrEqualToGrade(threshold) {
+			return true
 		}
 	}
 	return false
@@ -53,6 +52,26 @@ type ScoredObject struct {
 	Checks     []TestScore
 
 	ignoredChecks map[string]struct{}
+}
+
+func (so ScoredObject) AnyBelowOrEqualToGrade(threshold Grade) bool {
+	for _, s := range so.Checks {
+		if s.Grade <= threshold {
+			return true
+		}
+	}
+	return false
+}
+
+// The lowest core of any of the checks
+func (so ScoredObject) Grade() Grade {
+	lowest := GradeAllOK
+	for _, s := range so.Checks {
+		if s.Grade < lowest {
+			lowest = s.Grade
+		}
+	}
+	return lowest
 }
 
 func (so *ScoredObject) setIgnoredTests() {
@@ -89,9 +108,10 @@ func (so *ScoredObject) Add(ts TestScore, check ks.Check) {
 }
 
 type TestScore struct {
-	Check    ks.Check
-	Grade    Grade
-	Comments []TestScoreComment
+	Check            ks.Check
+	Grade            Grade
+	Comments         []TestScoreComment
+	MillenialComment string
 }
 
 type Grade int
@@ -102,6 +122,50 @@ const (
 	GradeAlmostOK Grade = 7
 	GradeAllOK    Grade = 10
 )
+
+func (g Grade) String() string {
+	switch g {
+	case GradeCritical:
+		return "CRITICAL"
+	case GradeWarning:
+		return "WARNING"
+	case GradeAlmostOK:
+		return "~ OK"
+	case GradeAllOK:
+		return "OK"
+	default:
+		panic("Unknown grade")
+	}
+}
+func (g Grade) Emoji() string {
+	switch g {
+	case GradeCritical:
+		return "💥"
+	case GradeWarning:
+		return "⚠️"
+	case GradeAlmostOK:
+		return "🔊"
+	case GradeAllOK:
+		return "💚"
+	default:
+		panic("Unknown grade")
+	}
+}
+
+func (g Grade) Color() color.Attribute {
+	switch g {
+	case GradeCritical:
+		return color.FgRed
+	case GradeWarning:
+		return color.FgYellow
+	case GradeAlmostOK:
+		return color.FgYellow // yellow but ok?
+	case GradeAllOK:
+		return color.FgGreen
+	default:
+		panic("Unknown grade")
+	}
+}
 
 type TestScoreComment struct {
 	Path        string

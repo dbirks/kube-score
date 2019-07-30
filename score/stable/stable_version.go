@@ -37,6 +37,7 @@ func metaStableAvailable(meta domain.BothMeta) (score scorecard.TestScore) {
 				fmt.Sprintf("The apiVersion and kind %s/%s is deprecated", meta.TypeMeta.APIVersion, meta.TypeMeta.Kind),
 				fmt.Sprintf("It's recommended to use %s instead", recommendedVersion),
 			)
+			score.MillenialComment = fmt.Sprintf("The apiVersion %s is deprecated", meta.TypeMeta.APIVersion)
 			return
 		}
 	}
